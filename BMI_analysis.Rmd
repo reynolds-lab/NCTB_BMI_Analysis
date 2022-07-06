@@ -11,7 +11,9 @@ Load libraries
 
 ```{r}
 library(ggplot2)
+library(ggpubr)
 library(tidyr)
+library(dplyr)
 library(questionr)
 library(effects)
 ```
@@ -19,21 +21,25 @@ library(effects)
 
 Load Data
 ```{r}
-NCTB <- read.csv("pub_datasest.csv",stringsAsFactors =  FALSE)
+NCTB <- read.csv("/Users/austin_reynolds/Dropbox/NCTB_BMI_Manuscript/pub_dataset.csv")
+NCTB$sex<-as.factor(NCTB$sex)
+NCTB$smokes<-as.factor(NCTB$smokes)
+NCTB$drinks_alcohol<-as.factor(NCTB$drinks_alcohol)
+NCTB$diabetes<-as.factor(NCTB$diabetes)
 ```
 
 
 ## Overall Generalized Linear Model
 
 ```{r}
-glm_BMI_log <- glm(logbmi~drnk_alcohol + smokes + diabetes + sex + age + Years.of.education, data= NCTB)
+glm_BMI_log <- glm(logbmi~drinks_alcohol + smokes + diabetes + sex + age + years_of_education, data= NCTB)
 summary(glm_BMI_log)
 ```
 
 ## Female Generalized Linear Model
 
 ```{r}
-femaleglm_BMI_log <- glm(logbmi~ drnk_alcohol + smokes + diabetes + age + Years.of.education, data=subset(NCTB, sex==2))
+femaleglm_BMI_log <- glm(logbmi~ drinks_alcohol + smokes + diabetes + age + years_of_education, data=subset(NCTB, sex==2))
 summary(femaleglm_BMI_log)
 ```
 
@@ -41,16 +47,15 @@ summary(femaleglm_BMI_log)
 ## Male Generalized Linear Model
 
 ```{r}
-maleglm_BMI_log <- glm(logbmi~ drnk_alcohol + smokes + diabetes + age + Years.of.education, data=subset(NCTB, sex==1))
-
+maleglm_BMI_log <- glm(logbmi~ drinks_alcohol + smokes + diabetes + age + years_of_education, data=subset(NCTB, sex==1))
+summary(maleglm_BMI_log)
 ```
 
 ## WHR Generalized Linear Model
 
 ```{r}
-glm_whr <- glm(whr ~ drnk_alcohol + smokes + diabetes + sex + age + Years.of.education, data = NCTB)
-
-plot(allEffects(glm_whr))
+glm_whr <- glm(whr ~ drinks_alcohol + smokes + diabetes + sex + age + years_of_education, data = NCTB)
+summary(glm_whr)
 ```
 
 ## Odds Ratios
@@ -58,11 +63,10 @@ plot(allEffects(glm_whr))
 ```{r}
 # Define categories for OR
 NCTB$category <- ifelse(NCTB$bmiclass %in% c("Obese","Overweight"), 1, 0)
-#NCTB$category <- ifelse(NCTB$bmiclass %in% c("Healthy","Underweight"), 0, NCTB$category)
 
-table(NCTB$category)
+#table(NCTB$category)
 # use the same model equation as our standard model and calculate odds ratios
-glm.binom <- glm(as.factor(category) ~ drnk_alcohol + sex + age + Years.of.education + smokes + diabetes, 
+glm.binom <- glm(as.factor(category) ~ drinks_alcohol + sex + age + years_of_education + smokes + diabetes, 
           data = NCTB, family="binomial")
 summary(glm.binom)
 odds.ratio(glm.binom)
@@ -74,59 +78,22 @@ odds.ratio(glm.binom)
 Figure 1
 
 ```{r}
-ggplot(NCTB, aes(x = bmi)) + geom_histogram(aes(y = ..density..), binwidth = 1, color = "grey30", fill = "lightblue") + geom_density(alpha = .2, fill = "antiquewhite3") + ggtitle("BMI Distribution") + xlab("BMI") + ylab("Density") + theme(plot.title = element_text(hjust = 0.5)) + theme(plot.title=element_text(family="AvantGarde", size=15))
+fig1 <- ggplot(NCTB, aes(bmi, fill = as.factor(sex))) + 
+  geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity', binwidth = 1) + 
+  theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 16)) + 
+  theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) + 
+  theme(legend.position="none")
+
+ggsave("/Users/austin_reynolds/Documents/Figure1.png", plot = fig1, height = 6, width = 7, units = "in", dpi = 600)
 ```
 
+Figure 2
+
 ```{r}
+png(filename = "/Users/austin_reynolds/Documents/Figure2.png", width = 10, height = 5, units = "in", res = 600)
 plot(allEffects(glm_BMI_log))
+dev.off()
 ```
 
 
-
-Table 1
-```{r}
-number <- c("Number", "Age (mean)", "Years of Education (mean)", "SAC", "Smokes", "Drinks Alcohol", "Height (cm)(mean)", "Weight (kg) (mean)", "BMI (mean)", "WHR (mean)", "Underweight", "Healthy", "Overweight", "Obese")
-Men <- c(166, "43", "8", "82%", "76%", "52%", "165.1", "56.9", "21.0", "0.84", "39.8% (n=66)", "41.6% (n=69)", "13.9% (n=23)", "4.8% (n=8)")
-Women <- c(269, "43", "8", "87%", "54%", "33%", "155.9", "66.9", "27.6", "0.88", "13.0% (n=35)", "30.5% (n=82)", "21.6% (n = 58)", "34.9% (n=94)")
-Total <- c(435, "43", "8", "85%", "62%", "41%", "159.4", "63.1", "25.1", "0.87", "23.2% (n=101)", "34.7% (n=151)", "18.6% (n=81)", "23.5% (n=102)")
-demo <- data.frame(number, Men, Women, Total)
-demo %>%
-kbl(col.names = c("", "Men", "Women", "Total"), align = "c") %>%
-kable_classic("striped", full_width = F, html_font = "Cambria") %>% 
-column_spec(1, bold = T, border_right = T) %>%
-column_spec(2, width = "15em", border_right = T) %>%
-column_spec(3, width = "15em", border_right = T)%>%
-column_spec(4, width = "15em")
-```
-
-Table 2
-```{r}
-coef <- c("Intercept", "Alcohol", "Smoking", "Has Diabetes", "Sex = Female", "Age", "Years of Education")
-Estimate <- c("1.2223993", "0.010396", "-0.0668051", "0.0682289", "0.0922496", "0.0014178", "0.0085889")
-StandardError <- c("0.0333597", "0.0118454", "0.0121000", "0.0218086", "0.0114282", "0.0004207", "0.0019146")
-tvalue <- c("36.64", "0.878", "-5.521", "3.129", "8.072", "3.370", "4.486")
-Pr <- c("< 2e-16", "0.380592", "5.85e-08", "0.001877", "7.06e-15", "0.000819", "9.34e-06")
-m1 <- data.frame(coef, Estimate, StandardError, tvalue, Pr)
-demo %>%
-kbl(col.names = c("Coefficients", "Estimate", "Std. Error", "t value", "Pr(>|t|)"), align = "c") %>%
-kable_classic("striped", full_width = F, html_font = "Cambria") %>% 
-column_spec(1, bold = T, border_right = T) %>%
-column_spec(2, width = "5em", border_right = T) %>%
-column_spec(3, width = "5em", border_right = T)%>%
-column_spec(4, width = "5em", border_right = T)%>%
-column_spec(5, width = "5em")
-```
-
-Table 3 
-```{r}
-var <- c("Intercept", "Alcohol", "Sex", "Age", "Years of Education", "Smoking", "Diabetes")
-OR <- c(0.007699, 1.239199, 5.405642, 1.023462, 1.176339, 0.253547, 4.221319)
-LowCI <- c(0.001143, 0.735224, 3.194148, 1.004719, 1.074636, 0.152082, 1.458455)
-HighCI <- c(0.0466, 2.1097, 9.4323, 1.043, 1.294, 0.4172, 14.5498)
-pval <- c(0.000000251, 0.424117, 0.000000000894, 0.014714,  0.00059, 0.0000000923, 0,012696)
-oddsratios <- data.frame(var, OR, LowCI, HighCI, pval)
-oddsratios %>%
-kbl(col.names = c("Variable", "OR", "2.5% CI", "97.5% CI", "P-value")) %>%
-kable_classic(full_width = F, html_font = "Cambria")
-```
 
