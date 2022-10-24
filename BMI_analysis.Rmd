@@ -73,7 +73,3 @@ dev.off()
 
 
 
-
-
-[![DOI](https://zenodo.org/badge/507713864.svg)](https://zenodo.org/badge/latestdoi/507713864)
-
