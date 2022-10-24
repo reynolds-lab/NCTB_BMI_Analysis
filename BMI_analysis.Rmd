@@ -21,41 +21,28 @@ library(effects)
 
 Load Data
 ```{r}
-NCTB <- read.csv("/Users/austin_reynolds/Dropbox/NCTB_BMI_Manuscript/pub_dataset.csv")
+NCTB <- read.csv("/Users/austin_reynolds/Dropbox/NCTB_BMI_Manuscript/pub_dataset_wclinictype_wethnicity.csv")
+NCTB_raw <- NCTB[,c(3:9)]
 NCTB$sex<-as.factor(NCTB$sex)
 NCTB$smokes<-as.factor(NCTB$smokes)
 NCTB$drinks_alcohol<-as.factor(NCTB$drinks_alcohol)
 NCTB$diabetes<-as.factor(NCTB$diabetes)
+NCTB$Clinic_Type<-as.factor(NCTB$Clinic_Type)
 ```
 
 
-## Overall Generalized Linear Model
+## Overall Linear Model
 
 ```{r}
-glm_BMI_log <- glm(logbmi~drinks_alcohol + smokes + diabetes + sex + age + years_of_education, data= NCTB)
-summary(glm_BMI_log)
+lm_BMI_log <- lm(logbmi~drinks_alcohol + smokes + diabetes + sex + age + years_of_education + Clinic_Type, data= NCTB)
+summary(lm_BMI_log)
 ```
 
-## Female Generalized Linear Model
+## WHR Linear Model
 
 ```{r}
-femaleglm_BMI_log <- glm(logbmi~ drinks_alcohol + smokes + diabetes + age + years_of_education, data=subset(NCTB, sex==2))
-summary(femaleglm_BMI_log)
-```
-
-
-## Male Generalized Linear Model
-
-```{r}
-maleglm_BMI_log <- glm(logbmi~ drinks_alcohol + smokes + diabetes + age + years_of_education, data=subset(NCTB, sex==1))
-summary(maleglm_BMI_log)
-```
-
-## WHR Generalized Linear Model
-
-```{r}
-glm_whr <- glm(whr ~ drinks_alcohol + smokes + diabetes + sex + age + years_of_education, data = NCTB)
-summary(glm_whr)
+lm_whr <- lm(whr ~ drinks_alcohol + smokes + diabetes + sex + age + years_of_education + Clinic_Type, data = NCTB)
+summary(lm_whr)
 ```
 
 ## Odds Ratios
@@ -66,7 +53,7 @@ NCTB$category <- ifelse(NCTB$bmiclass %in% c("Obese","Overweight"), 1, 0)
 
 #table(NCTB$category)
 # use the same model equation as our standard model and calculate odds ratios
-glm.binom <- glm(as.factor(category) ~ drinks_alcohol + sex + age + years_of_education + smokes + diabetes, 
+glm.binom <- glm(as.factor(category) ~ drinks_alcohol + sex + age + years_of_education + smokes + diabetes + Clinic_Type, 
           data = NCTB, family="binomial")
 summary(glm.binom)
 odds.ratio(glm.binom)
@@ -75,25 +62,18 @@ odds.ratio(glm.binom)
 
 
 
-Figure 1
+
+Figure S1
 
 ```{r}
-fig1 <- ggplot(NCTB, aes(bmi, fill = as.factor(sex))) + 
-  geom_histogram(alpha = 0.5, aes(y = ..density..), position = 'identity', binwidth = 1) + 
-  theme(axis.title.x = element_text(size = 18), axis.text.x = element_text(size = 16)) + 
-  theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) + 
-  theme(legend.position="none")
-
-ggsave("/Users/austin_reynolds/Documents/Figure1.png", plot = fig1, height = 6, width = 7, units = "in", dpi = 600)
-```
-
-Figure 2
-
-```{r}
-png(filename = "/Users/austin_reynolds/Documents/Figure2.png", width = 10, height = 5, units = "in", res = 600)
+png(filename = "/Users/austin_reynolds/Documents/FigureS1.png", width = 10, height = 5, units = "in", res = 600)
 plot(allEffects(glm_BMI_log))
 dev.off()
 ```
 
 
+
+
+
+[![DOI](https://zenodo.org/badge/507713864.svg)](https://zenodo.org/badge/latestdoi/507713864)
 
